@@ -105,7 +105,7 @@ function [model, progress] = solverFW(param, options)
 %       Block-Coordinate Frank-Wolfe Optimization for Structural SVMs,
 %       International Conference on Machine Learning, 2013.
 
-% == geting the problem description:
+% == getting the problem description:
 phi = param.featureFn; % for \phi(x,y) feature mapping
 loss = param.lossFn; % for L(ytruth, ypred) loss function
 if isfield(param, 'constraintFn')
