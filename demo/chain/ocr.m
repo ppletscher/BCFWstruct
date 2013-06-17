@@ -27,7 +27,7 @@ param.featureFn = @chain_featuremap;
 % options structure:
 options = [];
 options.lambda = 1e-2;
-options.num_passes = 10;
+options.num_passes = 50;
 options.do_line_search = 1;
 options.debug = 1;
 
