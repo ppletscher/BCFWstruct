@@ -11,7 +11,7 @@ function [model, progress] = solverSSG(param, options)
 % The structured SVM has the form
 % min_{w} 0.5*\lambda*||w||^2+ 1/n*\sum_{i=1}^n H_i(w) [see (3) in paper]
 %   where H_i(w) is the structured hinge loss on the i^th example:
-%         H_i(w) = max_{y in Y} ell(y_i,y) - <w, \psi_i(y)> [(2) in paper]
+%         H_i(w) = max_{y in Y} L(y_i,y) - <w, \psi_i(y)> [(2) in paper]
 %
 % We use a calling interface very similar to version 1.1 of svm-struct-matlab 
 % developped by Andrea Vedaldi (see vedaldi/code/svm-struct-matlab.html).
@@ -42,7 +42,7 @@ function [model, progress] = solverSSG(param, options)
 %         A cell array of labels (y_i). The entries can have any nature.
 %
 %     lossFn    -- loss function callback
-%         A handle to the loss function \ell(ytruth, ypredict) defined for 
+%         A handle to the loss function L(ytruth, ypredict) defined for 
 %         your problem. This function should have a signature of the form:
 %           scalar_output = loss(param, ytruth, ypredict) 
 %         It will be given an input ytruth, a ground truth label;
@@ -107,8 +107,6 @@ function [model, progress] = solverSSG(param, options)
 %
 % Outputs:
 %   model       model.w contains the parameters;
-%               model.ell contains b'*alpha which is useful to compute
-%               duality gap, etc.
 %   progress    Primal objective, duality gap etc as the algorithm progresses,
 %               can be used to visualize the convergence.
 %
@@ -122,7 +120,7 @@ function [model, progress] = solverSSG(param, options)
 
 % == geting the problem description:
 phi = param.featureFn; % for \phi(x,y) feature mapping
-loss = param.lossFn; % for \ell(ytruth, ypred) loss function
+
 if isfield(param, 'constraintFn')
     % for backward compatibility with svm-struct-learn
     maxOracle = param.constraintFn;
@@ -151,14 +149,6 @@ progress = [];
 
 % === Initialization ===
 % set w to zero vector
-% (corresponds to setting all the mass of each dual variable block \alpha_(i)
-% on the true label y_i coordinate [i.e. \alpha_i(y) =
-% Kronecker-delta(y,y_i)] using notation from Appendix E of paper).
-
-% w: d x 1: store the current parameter iterate
-% wMat: d x n matrix, wMat(:,i) is storing w_i (in Alg. 4 notation) for example i.
-%    Using implicit dual variable notation, we would have w_i = A \alpha_[i]
-%    -- see section 5, "application to the Structural SVM"
 if using_sparse_features
     model.w = sparse(d,1);
 else
@@ -201,7 +191,6 @@ for p=1:options.num_passes
     end
 
     for dummy = 1:n
-        % (each numbered comment correspond to a line in algorithm 4)
         % 1) Picking random example:
         if (isequal(options.sample, 'uniform'))
             i = randi(n); % uniform sampling
@@ -212,7 +201,15 @@ for p=1:options.num_passes
         % 2) solve the loss-augmented inference for point i
         ystar_i = maxOracle(param, model, patterns{i}, labels{i});
                 
-        % 3) define the update quantities:
+        % 3) get the subgradient
+        % ***
+        % [the non-standard notation below is by analogy to the BCFW
+        % algorithm -- but you can convince yourself that we are just doing
+        % the standard subgradient update:
+        %    w_(k+1) = w_k - stepsize*(\lambda*w_k + 1/n psi_i(ystar_i))
+        % with stepsize = 1/(\lambda*(k+1))
+        % ***
+        %
         % [note that lambda*w_s is subgradient of 1/n*H_i(w) ]
         % psi_i(y) := phi(x_i,y_i) - phi(x_i, y)
         psi_i = phi(param, patterns{i}, labels{i})-phi(param, patterns{i}, ystar_i);
@@ -221,7 +218,7 @@ for p=1:options.num_passes
         % 4) step-size gamma:
         gamma = 1/(k+1);
         
-        % 5) finally update the weights and ell variables
+        % 5) finally update the weights
         model.w = (1-gamma)*model.w + gamma*n * w_s; % stochastic subgradient update (notice the factor n here)
                     
         % 6) Optionally, update the weighted average:

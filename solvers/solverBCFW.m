@@ -96,6 +96,8 @@ function [model, progress] = solverBCFW(param, options)
 %               (default: 1)
 %   sample      Sampling strategy for example index, either a random permutation
 %               ('perm') or uniform sampling ('uniform').
+%               [Note that our convergence rate proof only holds for uniform
+%               sampling, not for a random permutation.]
 %               (default: 'uniform')
 %   debug_multiplier
 %               If set to 0, the algorithm computes the objective after each full
