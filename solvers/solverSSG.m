@@ -77,7 +77,7 @@ function [model, progress] = solverSSG(param, options)
 % 
 %   lambda      The regularization constant (default: 1/n).
 %   num_passes  Number of iterations (passes through the data) to run the 
-%               algorithm. (default: 10)
+%               algorithm. (default: 50)
 %   debug       Boolean flag whether to track the primal objective etc.
 %               (default: 0)
 %   do_weighted_averaging
@@ -278,7 +278,7 @@ end % solverSSG
 function options = defaultOptions(n)
 
 options = [];
-options.num_passes = 10;
+options.num_passes = 50;
 options.do_weighted_averaging = 1;
 options.time_budget = inf;
 options.debug = 0;
