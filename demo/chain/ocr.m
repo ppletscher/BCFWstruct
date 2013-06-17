@@ -31,7 +31,7 @@ options.num_passes = 10;
 options.do_line_search = 1;
 options.debug = 1;
 
-% run the solver
+%% run the solver
 [model, progress] = solverBCFW(param, options);
 %[model, progress] = solverFW(param, options);
 %[model, progress] = solverSSG(param, options);
