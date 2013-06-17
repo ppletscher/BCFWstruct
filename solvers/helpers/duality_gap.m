@@ -1,12 +1,15 @@
-function [gap] = duality_gap( param, maxOracle, model, lambda )
-% [gap] = duality_gap( param, maxOracle, model, lambda )
+function [gap, w_s, ell_s] = duality_gap( param, maxOracle, model, lambda )
+% [gap, w_s, ell_s] = duality_gap( param, maxOracle, model, lambda )
 % 
 % Return the SVM duality gap for the implicit primal-dual pair given by
 %   model.w and model.ell (w = A*\alpha; ell = b'*\alpha -- alpha is
 %   implicit). See "Duality Gap" in Section 4 of ICML paper.
 %
 % This function is expensive, as it requires a full decoding pass over all
-% examples (so it costs as much as n BCFW iterations).
+% examples (so it costs as much as n BCFW iterations). If the duality gap
+% is checked regularly as a stopping criterion, then one can also use the
+% returned w_s & ell_s quantities to make a batch Frank-Wolfe step and not
+% waste this computation (see the update in Alg. 2 in the paper).
 %   
 % duality gap = lambda*(w-w_s)'*w - ell + ell_s
 %

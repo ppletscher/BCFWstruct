@@ -8,7 +8,9 @@ addpath(genpath('../../solvers/'));
 addpath('helpers');
 
 % We support two different settings for the dataset (ocr: only one fold in
-% training set, ocr2: all but one fold in training set)
+% training set, ocr2: all but one fold in training set
+% -- ocr2 is the one that we have used in our experiments in the 
+% ICML 2013 paper)
 data_name = 'ocr';
 [patterns_train, labels_train, patterns_test, labels_test] = loadOCRData(data_name, '../../data/');
 
