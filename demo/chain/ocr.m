@@ -27,9 +27,10 @@ param.featureFn = @chain_featuremap;
 % options structure:
 options = [];
 options.lambda = 1e-2;
-options.num_passes = 50;
+options.gap_threshold = 0.1; % duality gap stopping criterion
+options.num_passes = 100; % max number of passes through data
 options.do_line_search = 1;
-options.debug = 1;
+options.debug = 1; % for displaying more info (makes code about 3x slower)
 
 %% run the solver
 [model, progress] = solverBCFW(param, options);

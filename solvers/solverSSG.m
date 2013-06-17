@@ -78,7 +78,9 @@ function [model, progress] = solverSSG(param, options)
 %   lambda      The regularization constant (default: 1/n).
 %   num_passes  Number of iterations (passes through the data) to run the 
 %               algorithm. (default: 50)
-%   debug       Boolean flag whether to track the primal objective etc.
+%   debug       Boolean flag whether to track the primal objective, dual
+%               objective, and training error (makes the code about 3x
+%               slower given the extra two passes through data).
 %               (default: 0)
 %   do_weighted_averaging
 %               Boolean flag whether to use weighted averaging of the iterates.

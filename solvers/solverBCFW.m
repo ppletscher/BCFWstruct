@@ -78,9 +78,30 @@ function [model, progress] = solverBCFW(param, options)
 %              customize the behavior of the optimization algorithm:
 % 
 %   lambda      The regularization constant (default: 1/n).
-%   num_passes  Number of iterations (passes through the data) to run the 
-%               algorithm. (default: 50)
-%   debug       Boolean flag whether to track the primal objective etc.
+%
+%   gap_threshold **STOPPING CRITERION**
+%               Stop the algorithm once the duality gap falls below this
+%               threshold. Use gap_check to control how often the gap is
+%               checked. Note that the default of 0.1 is equivalent
+%               to the criterion used in svm_struct_learn Matlab wrapper.
+%               (default: 0.1).
+%               
+%   gap_check   Gives the number of passes through data between each check of the 
+%               duality gap (put 0 to turn it off). 
+%               I.e. every gap_check passes through the data,
+%               the algorithm do a batch pass through the data to compute
+%               the duality gap. [A feature to implement in the future is
+%               to do a batch FW step if the gap_threshold hasn't been met 
+%               yet to avoid wasting this computation.] This slows down the
+%               code roughly by a factor of (100/gap_check) %.
+%               (default: 10)
+%
+%   num_passes  Maximum number of passes through the data before the 
+%               algorithm stops (default: 200)
+%
+%   debug       Boolean flag whether to track the primal objective, dual
+%               objective, and training error (makes the code about 3x
+%               slower given the extra two passes through data).
 %               (default: 0)
 %   do_linesearch
 %               Boolean flag whether to use line-search. (default: 1)
@@ -207,6 +228,7 @@ tic();
 
 % === Main loop ====
 k=0; % same k as in paper
+gap_check_counter = 1; % keeps track of how many passes through the data since last duality gap check...
 for p=1:options.num_passes
 
     perm = [];
@@ -274,7 +296,9 @@ for p=1:options.num_passes
         
         % debug: compute objective and duality gap. do not use this flag for
         % timing the optimization, since it is very costly!
-        if (options.debug && k == debug_iter)
+        % (makes the code about 3x slower given the additional 2 passes
+        % through the data).
+        if (options.debug && k >= debug_iter)
             if (options.do_weighted_averaging)
                 model_debug.w = wAvg;
                 model_debug.ell = lAvg;
@@ -317,7 +341,35 @@ for p=1:options.num_passes
             return
         end
     end
-end
+    % checking duality gap stopping criterion if required:
+    if (options.gap_check && gap_check_counter >= options.gap_check)
+        gap_check_counter = 0;
+        
+        % we use the wAvg parameter to compute gap
+        if (options.do_weighted_averaging)
+            model_debug.w = wAvg;
+            model_debug.ell = lAvg;
+        else
+            model_debug.w = model.w;
+            model_debug.ell = ell;
+        end
+        
+        % compute gap:
+        gap = duality_gap(param, maxOracle, model_debug, lambda);
+        % for later: [gap, w_s, ell_s] = duality_gap(param, maxOracle, model, lambda);
+        if gap <= options.gap_threshold
+            fprintf('Duality gap below threshold -- stopping!\n')
+            fprintf('current gap: %g, gap_threshold: %g\n', gap, options.gap_threshold)
+            fprintf('Reached after pass: %d (iteration %d).\n', p, k)
+            break % exit loop!
+        else
+            % to implement later: do a batch FW step with w_s & ell_s above
+            fprintf('Duality gap check: gap = %g at pass %d (iteration %d)\n', gap, p, k)
+        end
+    end % end of gap_check section
+    gap_check_counter = gap_check_counter+1;
+    
+end % end of main loop
 
 if (options.do_weighted_averaging)
     model.w = wAvg; % return the averaged version
@@ -332,7 +384,7 @@ end % solverBCFW
 function options = defaultOptions(n)
 
 options = [];
-options.num_passes = 50;
+options.num_passes = 200;
 options.do_line_search = 1;
 options.do_weighted_averaging = 1;
 options.time_budget = inf;
@@ -342,5 +394,7 @@ options.sample = 'uniform'; % sampling strategy in {'uniform', 'perm'}
 options.debug_multiplier = 0; % 0 corresponds to logging after each full pass
 options.lambda = 1/n;
 options.test_data = [];
+options.gap_threshold = 0.1;
+options.gap_check = 10; % this makes the code about 10% slower than if use gap_check = 0
 
 end % defaultOptions

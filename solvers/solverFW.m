@@ -76,9 +76,19 @@ function [model, progress] = solverFW(param, options)
 %              customize the behavior of the optimization algorithm:
 % 
 %   lambda      The regularization constant (default: 1/n).
-%   num_passes  Number of iterations (passes through the data) to run the 
-%               algorithm. (default: 50)
-%   debug       Boolean flag whether to track the primal objective etc.
+%
+%   gap_threshold **STOPPING CRITERION**
+%               Stop the algorithm once the duality gap falls below this
+%               threshold. Note that the default of 0.1 is equivalent
+%               to the criterion used in svm_struct_learn Matlab wrapper.
+%               (default: 0.1).
+%
+%   num_passes  Maximum number of passes through the data before the 
+%               algorithm stops (default: 200)
+%
+%   debug       Boolean flag whether to track the primal objective, dual
+%               objective, and training error (makes the code about 3x
+%               slower given the extra two passes through data).
 %               (default: 0)
 %   do_linesearch
 %               Boolean flag whether to use line-search. (default: 1)
@@ -199,18 +209,29 @@ for p=1:options.num_passes
         % maxOracle or in the featuremap
         assert((loss_i - model.w'*psi_i) >= -1e-12);
     end
-        
+    
+    % compute duality gap:
+    gap = lambda*(model.w'*(model.w - w_s)) - (model.ell - ell_s);
     % get the step-size gamma:
     if (options.do_line_search)
         % analytic line-search for the best stepsize [by default]
         % formula from Alg. 2:
-        gamma_opt = (model.w'*(model.w - w_s) - 1/lambda*(model.ell - ell_s))...
-                          / ( (model.w - w_s)'*(model.w - w_s) +eps);
+        gamma_opt = gap / (lambda*( (model.w - w_s)'*(model.w - w_s) +eps));
         % +eps is to avoid division by zero...
         gamma = max(0,min(1,gamma_opt)); % truncate on [0,1]
     else
         % we use the fixed step-size schedule
         gamma = 2/(k+2);
+    end
+    
+    % stop if duality gap is below threshold:
+    if gap <= options.gap_threshold
+        fprintf('Duality gap below threshold -- stopping!\n')
+        fprintf('current gap: %g, gap_threshold: %g\n', gap, options.gap_threshold)
+        fprintf('Reached at iteration %d.\n', k)
+        break % exit loop!
+    else
+        fprintf('Duality gap check: gap = %g at iteration %d\n', gap, k)
     end
     
     % finally update the weights and ell variables
@@ -225,7 +246,7 @@ for p=1:options.num_passes
         primal = f+gap; % a cheaper alternative to get the primal value
         train_error = average_loss(param, maxOracle, model);
         fprintf('pass %d (iteration %d), SVM primal = %f, SVM dual = %f, duality gap = %f, train_error = %f \n', ...
-            p, k, primal, f, gap, train_error);
+            p, k+1, primal, f, gap, train_error);
         
         progress.primal = [progress.primal; primal];
         progress.dual = [progress.dual; f];
@@ -254,11 +275,12 @@ end % solverFW
 function options = defaultOptions(n)
 
 options = [];
-options.num_passes = 50;
+options.num_passes = 200;
 options.do_line_search = 1;
 options.time_budget = inf;
 options.debug = 0;
 options.lambda = 1/n;
 options.test_data = [];
+options.gap_threshold = 0.1;
 
 end % defaultOptions
