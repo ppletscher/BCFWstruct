@@ -18,7 +18,7 @@ The code is organized as follows:
 ##Getting Started
 
 1. You need a working installation of Matlab.
-2. Clone the git repository: `git clone git@github.com:ppletscher/BCFWstruct.git`.
+2. Clone the git repository: `git clone git@github.com:ppletscher/BCFWstruct.git` (or if you don't want to use git, you can download a zip file of the latest version of the code by following [this link](https://github.com/ppletscher/BCFWstruct/zipball/master)).
 3. Obtain the data files required to run the demos. On Unix systems you can
    simply run `./fetch_data.sh`. On Windows, you can use
    [Cygwin](http://www.cygwin.com/) or manually download the listed files and
@@ -38,6 +38,9 @@ prediction problem, you will need to implement three functions:
 You can find an example implementation in the `demo/chain` folder. For an
 overview of the exact usage and the supported options, please check the Matlab
 documentation of the solvers.
+
+Note that BCFW uses a similar calling interface as the one from the Matlab
+wrapper to SVM^struct [implemented by Andrea Vedaldi](http://www.vlfeat.org/~vedaldi/code/svm-struct-matlab.html). Users of SVM^struct can thus easily use BCFW with only a tiny change in their code (see the Matlab documentation of solverBCFW for more details).
 
 
 ##Citation
