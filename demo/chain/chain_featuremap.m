@@ -8,15 +8,23 @@ function phi = chain_featuremap(param, x, y)
 
 num_dims = size(x.data,1);
 num_vars = size(x.data,2);
-num_edges = num_vars-1;
 num_states = x.num_states;
 
-phi = zeros(num_states*num_dims+2*num_states+num_states^2, 1);
 
 % unaries
-for i=1:num_vars
-    idx = y(i)*num_dims;
-    phi((idx+1):(idx+1+num_dims-1)) = phi((idx+1):(idx+1+num_dims-1)) + x.data(:,i);
+if (issparse(x.data))
+    phi = sparse([], [], [], num_states*num_dims+2*num_states+num_states^2, 1, nnz(x.data)+2+num_vars-1);
+    for i=1:num_vars
+        offset = y(i)*num_dims;
+        idx = find(x.data(:,i));
+        phi(idx+offset) = phi(idx+offset) + x.data(idx,i);
+    end
+else
+    phi = zeros(num_states*num_dims+2*num_states+num_states^2, 1);
+    for i=1:num_vars
+        idx = y(i)*num_dims;
+        phi((idx+1):(idx+1+num_dims-1)) = phi((idx+1):(idx+1+num_dims-1)) + x.data(:,i);
+    end
 end
 phi(num_states*num_dims+y(1)+1) = 1; % bias for first letter
 phi(num_states*num_dims+num_states+y(end)+1) = 1; % bias for last letter

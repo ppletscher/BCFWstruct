@@ -17,17 +17,17 @@ num_states = xi.num_states;
 weight = weightVec2Cell(w, num_states, num_dims);
 
 % build score for the chain graph
-if (~issparse(w))
-    theta_unary = weight{1}'*xi.data;
-else
-    % don't do a reshape if w sparse, seems faster
-    % TODO: further speedups possible?
+if (issparse(w))
     theta_unary = zeros(num_states, num_vars);
-    idx = 0;
-    for i=1:num_states
-        theta_unary(i,:) = w((idx+1):(idx+num_dims))'*xi.data;
-        idx = idx+num_dims;
+    for i=1:num_vars
+        idx_x = find(xi.data(:,i));
+        for j=1:num_states
+            offset = (j-1)*num_dims;
+            theta_unary(j,i) = w(idx_x+offset)'*xi.data(idx_x,i);
+        end
     end
+else
+    theta_unary = weight{1}'*xi.data;
 end
 theta_unary(:,1) = theta_unary(:,1) + weight{2}; % first position has a bias 
 theta_unary(:,end) = theta_unary(:,end) + weight{3}; % last position has a bias
@@ -53,10 +53,10 @@ end % chain_oracle
 function weight = weightVec2Cell(w, num_states, d)
 
 idx = (num_states*d);
-if (~issparse(w))
-    weight{1} = reshape(w(1:idx), [d num_states]);
-else
+if (issparse(w))
     weight{1} = [];
+else
+    weight{1} = reshape(w(1:idx), [d num_states]);
 end
 weight{2} = w((idx+1):(idx+num_states));
 idx = idx+num_states;
