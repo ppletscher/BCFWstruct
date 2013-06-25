@@ -18,7 +18,7 @@ The code is organized as follows:
 ##Getting Started
 
 1. You need a working installation of Matlab.
-2. Clone the git repository: `git clone git@github.com:ppletscher/BCFWstruct.git` (or if you don't want to use git, you can download a zip file of the latest version of the code by following [this link](https://github.com/ppletscher/BCFWstruct/zipball/master)).
+2. Clone the git repository: `git clone git@github.com:ppletscher/BCFWstruct.git` (or if you don't want to use git, you can download a zip file of the latest release of the code by following [this link](http://mloss.org/revision/download/1340/)).
 3. Obtain the data files required to run the demos. On Unix systems you can
    simply run `./fetch_data.sh`. On Windows, you can use
    [Cygwin](http://www.cygwin.com/) or manually download the listed files and
